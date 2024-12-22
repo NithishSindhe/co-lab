@@ -1,0 +1,25 @@
+# Node.js
+node_modules/
+
+# Build files
+build/
+dist/
+
+# Logs
+*.log
+
+# Environment files
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Client side build
+client/build
+client/dist
+
+# Server side build
+server/build
+server/dist
+

@@ -1,0 +1,11 @@
+{
+  "name": "colaboration-platform-server",
+  "version": "1.0.0",
+  "description": "nodejs express server for colaboration platform",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm start"
+  },
+  "author": "nithish sindhe",
+  "license": "ISC"
+}

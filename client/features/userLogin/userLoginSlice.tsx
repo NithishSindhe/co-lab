@@ -27,5 +27,20 @@ export const profileSlice = createSlice({
     },
 });
 
+export const loginStatus = createSlice({
+    name: 'loginStatus',
+    initialState: false,
+    reducers: {
+        setLoginStatus:() => {
+            console.log(`setting user login status to true`)
+            return true
+        },
+        userLogout: () => {
+            console.log(`setting userLogout `)
+            return false
+        }
+    },
+})
+
 export const { setProfile, clearProfile } = profileSlice.actions;
 export default profileSlice.reducer;

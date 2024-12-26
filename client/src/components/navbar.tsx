@@ -76,14 +76,14 @@ function Navbar() {
         <li>
           <a
             href="#"
-            className="block py-2 px-3 text-gray-900 hover:bg-gray-100 focus:hover:bg-blue-700 rounded focus:bg-blue-700 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent md:focus:hover:text-white md:p-0.5"
+            className="w-full block py-2 px-3 text-gray-900 hover:bg-blue-700 focus:hover:bg-blue-700 rounded focus:bg-blue-700 md:border-0 text-white md:hover:text-blue-500 md:p-1"
           >
             Home
           </a>
         </li>
         <li>
           <a href="#"
-            className="block py-2 px-3 text-gray-900 hover:bg-gray-100 focus:hover:bg-blue-700 rounded focus:bg-blue-700 md:hover:bg-gray-700 md:border-0 md:hover:text-blue-700 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent md:focus:hover:text-white md:p-0.5" >
+            className="w-full block py-2 px-3 text-gray-900 hover:bg-blue-700 focus:hover:bg-blue-700 rounded focus:bg-blue-700 md:border-0 text-white md:hover:text-blue-500 md:p-1" >
             Chat
           </a>
         </li>
@@ -109,7 +109,7 @@ function Navbar() {
               />
             </svg></span>:<button 
                             onClick={() => {login()}}
-                            className='w-full py-2 px-3 text-gray-900 bg-transparent rounded hover:bg-gray-100 md:hover:bg-gray-100 md:border-0 dark:text-white md:dark:hover:border-white'>Sign in</button>}
+                            className='w-full block py-2 px-3 text-gray-900 hover:bg-blue-700 rounded md:border-0 text-white md:hover:text-blue-500 md:p-1'>Sign in</button>}
           </button>
          {/*drop down*/}
           <div
@@ -121,13 +121,17 @@ function Navbar() {
           </div>
         </li>
         <li>
-          <button onClick={() => {logOut()}}
-            className="block md:hidden py-2 px-3 text-gray-900 hover:bg-gray-100 focus:hover:bg-blue-700 rounded focus:bg-blue-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white " >
-            Log out
-          </button>
-        </li>
-        <li>
           <img className="hidden md:block h-8 rounded-full" src={profile.picture || noprofile} alt="user pic" />
+        </li>
+        {/* this is for small screens only */}
+        <li>
+            { profile?.name ? <button onClick={() => {logOut()}}
+            className="block w-full md:hidden py-2 px-3 text-gray-900 hover:bg-gray-100 bg-transparent bg-blue-700 focus:hover:bg-blue-700 rounded-lg focus:bg-blue-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white " >
+                Log out
+            </button>:<button onClick={() => {login()}}
+            className="block w-full md:hidden py-2 px-3 text-gray-900 hover:bg-gray-100 bg-transparent bg-blue-700 focus:hover:bg-blue-700 rounded-lg focus:bg-blue-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white " >
+                Sign in
+            </button>}
         </li>
       </ul>
     </div>

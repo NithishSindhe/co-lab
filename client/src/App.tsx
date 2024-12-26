@@ -1,10 +1,15 @@
 import './App.css'
-//import TreeExample from './components/folderTree'
 import { googleLogout, useGoogleLogin } from '@react-oauth/google';
 import { useState,useEffect } from 'react'
 import axios from 'axios';
 import type { RootState, AppDispatch } from './store';
 import { useSelector, useDispatch } from 'react-redux';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+
+//components 
+//import TreeExample from './components/folderTree'
+import Navbar from './components/navbar'
 
 //actions 
 import { setProfile, clearProfile } from '../features/userLogin/userLoginSlice'
@@ -91,29 +96,39 @@ function App() {
         googleLogout();
         dispatch(clearProfile());
     };
-    const main_page = () => {
-        return <div>
+    const Main_page = () => {
+        return <>
+            <h1 className='text-slate-950 bold'>Welcome to CoLab</h1>
+            <div>
                 <br />
                 {(Object.keys(profile).length) ? (
-                    <div>
+                    <div className="text-left" >
                         <img src={profile.picture} alt="user image" />
                         <h3>User Logged in</h3>
                         <p>Name: {profile.name}</p>
                         <p>Email Address: {profile.email}</p>
                         <br />
                         <br />
-                        <button onClick={logOut}>Log out</button>
+                        <div className="text-center">
+                            <button  onClick={logOut}>Log out</button>
+                        </div>
                     </div>
                 ) : (
                     <button onClick={() => login()}>Sign in with Google 🚀 </button>
                 )}
         </div>
+        </>
     }
     return (
-    <>
-        <h1 className='bold'>Welcome to Co-Lab</h1>
-        {main_page()}
-    </>
+    <div className='h-full w-full bg-white'>
+        <Navbar/>
+        <BrowserRouter>
+          <Routes>
+            <Route path='/' element={<Main_page/>} />
+          </Routes>
+        </BrowserRouter>
+    </div>
       )
 }
+//{main_page()}
 export default App

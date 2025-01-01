@@ -3,9 +3,14 @@
   "version": "1.0.0",
   "description": "nodejs express server for colaboration platform",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "npm start"
   },
   "author": "nithish sindhe",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
 }

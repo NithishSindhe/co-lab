@@ -4,13 +4,15 @@ export const loginStatus = createSlice({
     initialState: false,
     reducers: {
         setLoginStatus:() => {
-            console.log(`setting user login status to true`)
+            console.log(`loginStatu: setting user login status to true`)
             return true
         },
         userLogout: () => {
-            console.log(`setting userLogout `)
+            console.log(`loginStatu: setting userLogout `)
             return false
         }
     },
 })
+
+export const { setLoginStatus, userLogout } = loginStatus.actions;
 export default loginStatus.reducer;

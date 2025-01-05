@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { googleLogout, useGoogleLogin } from '@react-oauth/google';
 import logo from '../assets/colab_logo.jpeg'
 import axios, {AxiosResponse} from 'axios';
@@ -22,30 +22,29 @@ interface CredentialResponse {
 function Navbar() {
     const navigate = useNavigate();
     const [expand, setExpand] = useState<boolean>(false)
-    const [ user, setUser ] = useState<CredentialResponse | null>();
     const profile: Profile = useSelector((state: RootState) => state.profile);
+    const loginStatus: boolean = useSelector((state: RootState) => state.loginStatus);
     const dispatch: AppDispatch = useDispatch();
-    const [ProfileExpand,setProfileExpand] = useState<boolean>(false)
-    useEffect(() => {
-            if (user?.access_token) {
-                axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${user.access_token}`, {
-                        headers: {
-                            Authorization: `Bearer ${user.access_token}`,
-                            Accept: 'application/json'
-                        }
-                    })
-                    .then((res:AxiosResponse) => {
-                        dispatch(setProfile(res.data));
-                    })
-                    .catch((err) => console.log(err));
-            }else{
-                console.log('user not logged in')
-                console.log(user)
-        }
-        }, [ user ]);
+    const [ProfileExpand, setProfileExpand] = useState<boolean>(false)
     const login = useGoogleLogin({
         onSuccess: (codeResponse:CredentialResponse) => {
-            setUser(codeResponse)
+            console.log(codeResponse)
+            const options = {
+              url: 'http://localhost:3000/userlogin',
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json;charset=UTF-8'
+              },
+              data: {
+                    'access_token' : codeResponse.access_token
+              }
+            };
+            axios(options)
+              .then(response => {
+                dispatch(setProfile({name:response.data.name, picture: response.data.picture}));
+                dispatch(setLoginStatus())
+              });
         },
         onError: (error) => console.log('Login Failed:', error)
     });
@@ -66,7 +65,6 @@ function Navbar() {
           <img src={logo} className="h-8" alt="Co-Lab logo" />
           <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">CoLab</span>
         </a>
-
         <button
           onClick={() => setExpand((prev) => !prev)}
           type="button"

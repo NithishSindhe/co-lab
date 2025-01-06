@@ -96,7 +96,7 @@ function Navbar() {
             <li className="relative">
               <button
                 onClick={() => setProfileExpand((prev) => !prev)}
-                className={`hidden md:block flex items-center w-full py-0 px-0 text-gray-900 bg-transparent rounded border-0 bg-transparent`}
+                className={`hidden md:block flex items-center w-full py-0 px-0 text-gray-900 bg-transparent rounded border-0 bg-transparent text-white`}
               >
                 {profile?.name ? <span className='inline-block'>{profile.name}<svg
                   className="inline-block w-2.5 h-2.5 ml-2"

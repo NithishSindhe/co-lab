@@ -96,7 +96,7 @@ function Navbar() {
             <li className="relative">
               <button
                 onClick={() => setProfileExpand((prev) => !prev)}
-                className={`hidden md:block flex items-center w-full py-2 px-3 text-gray-900 bg-transparent rounded hover:bg-gray-100 md:hover:bg-gray-100 md:border-0 md:hover:text-blue-700 dark:text-white md:dark:hover:text-blue-500 dark:focus:text-white dark:hover:bg-gray-700 md:dark:hover:bg-gray-100`}
+                className={`hidden md:block flex items-center w-full py-0 px-0 text-gray-900 bg-transparent rounded border-0 bg-transparent`}
               >
                 {profile?.name ? <span className='inline-block'>{profile.name}<svg
                   className="inline-block w-2.5 h-2.5 ml-2"
@@ -114,7 +114,7 @@ function Navbar() {
                   />
                 </svg></span>:<button 
                                 onClick={() => {login()}}
-                                className='w-full block py-2 px-3 text-gray-900 hover:bg-blue-700 rounded md:border-0 text-white md:hover:text-blue-500 md:p-1'>Sign in</button>}
+                                className='w-full block py-2 px-3 text-gray-900 rounded bg-transparent md:border-0 text-white md:hover:border-0 md:hover:text-blue-500 md:p-1'>Sign in</button>}
               </button>
              {/*logout drop down only for bigger screens */}
               <div

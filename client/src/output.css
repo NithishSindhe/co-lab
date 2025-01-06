@@ -1091,6 +1091,21 @@ video {
   padding-bottom: 0.25rem;
 }
 
+.px-0 {
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+.py-0 {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.px-1 {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
 .pr-1 {
   padding-right: 0.25rem;
 }
@@ -1374,6 +1389,10 @@ video {
 
   .md\:p-1 {
     padding: 0.25rem;
+  }
+
+  .md\:hover\:border-0:hover {
+    border-width: 0px;
   }
 
   .md\:hover\:border-white:hover {

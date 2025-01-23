@@ -6,6 +6,7 @@ import Navbar from './components/navbar'
 import Home from './components/home'
 import Chat from './components/chat'
 import Canvas from './components/canvas'
+import Kanban from './components/kanban'
 
 function App() {
 
@@ -17,6 +18,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Canvas />} />
             <Route path="/chat" element={<Chat />} />
+            <Route path="/kanban" element={<Kanban />} />
           </Routes>
       </div>
     </div>

@@ -1,29 +1,27 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
+import React from 'react'
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import '../CSS/canvas.css'
 import { HexColorPicker } from "react-colorful";
+import { Rnd } from 'react-rnd'
+import { TransformWrapper, TransformComponent, useControls } from "react-zoom-pan-pinch";
 
 //interfaces 
 import type { RootState } from '../store';
+type Key = `${string},${string}`
 interface BitArrayResponse {
-  data: string[]; // Or number[] if your API returns numbers
-}
-interface BgColor {
-    backgroundColor: string
+    data: {colors:string[][]}; // Or number[] if your API returns numbers
 }
 
-function Canvas(){
+const Canvas = ():React.ReactElement => {
     const loginStatus: Boolean = useSelector((state: RootState) => state.loginStatus);
-    const blanks = new Array(1000).fill('#FFFFFF'); 
-    const [colors, setColors] = useState<string[]>(blanks)
+    const blanks:string[][] = new Array(10).fill('#000000').map(() => new Array(10).fill('#000000'))
+    const [colors, setColors] = useState<string[][]>(blanks)
     const [color, setColor] = useState<string>("#aabbcc");
-    const [debouncedColors, setDebouncedColors] = useState<string[]>(colors);
-    const [selectedPixel, setSelectedPixel] = useState<number|null>(null)
-    if(loginStatus){
-        
-    }
-    console.log(`canvas: login status is set to ${loginStatus}`)
+    //const [debouncedColors, setDebouncedColors] = useState<string[]>(colors);
+    const [selectedPixel, setSelectedPixel] = useState<[number,number]|null>(null)
+    //const Span = memo(( item:any ) => <span>{item}</span>);
     useEffect(()=>{
         axios.get(`http://localhost:3000/bitArray`, {
                 headers: {
@@ -31,53 +29,102 @@ function Canvas(){
                 }
             })
             .then((res:BitArrayResponse) => {
-                console.log(`got info ${res.data.length}`)
-                setColors(res.data)
+                setColors(res.data.colors)
             })
             .catch((err) => console.log(err));
     },[])
     //debounce
     useEffect(() => {
         const delayInput = setTimeout(() => {
-            setColors( prev => { 
-                console.log(prev)
-                if(prev){
-                    return prev.map((item, index) =>
-                            index === selectedPixel ? color : item
-                            );
-                }
-                return prev
+            if(selectedPixel){
+                const updatedArray = colors.map((row, rIndex) => row.map((item, cIndex) => rIndex === selectedPixel[0] && cIndex === selectedPixel[1] ? color : item));
+                setColors(updatedArray)
             }
-        )}, 500)
-        return () => clearTimeout(delayInput)
-    },[color])
-    useEffect(() => {
-        const delayInput = setTimeout(() => {
-            setDebouncedColors(colors)
         }, 500)
         return () => clearTimeout(delayInput)
     },[color])
-    useEffect(() => {
-        console.log(selectedPixel)
-    },[selectedPixel])
-    const pixels = useMemo(() => {
-        console.log('pixels is called')
-        if(colors && colors?.length > 0){
-            return colors.map((item,pos) => {
-                const bg_color:BgColor = {
-                    backgroundColor : `${item}`
-                }
-                return <span  key={pos} onClick={() => {setSelectedPixel(pos)}} className={`focus:border-gray-300 border border-transparent cursor-pointer hover:border-gray-300 inline-block w-4 h-4 `} style={bg_color}> </span>})
-        }else{
-            console.log('colors does not exist')
-        }
-    },[debouncedColors])
-    return <div className='w-full h-full flex justify-center align-center text-center'> 
-            <div className='' > 
-                <div className='mt-2 p-2 border-[2px] border-black max-w-screen-xl p-1 bg-white flex flex-wrap'>{pixels}</div> 
-            </div> 
-              <HexColorPicker className='w-fit m-1 h-fit' color={color} onChange={setColor} />
+    //useEffect(() => {
+    //    const delayInput = setTimeout(() => {
+    //        setDebouncedColors(colors)
+    //    }, 500)
+    //    return () => clearTimeout(delayInput)
+    //},[color])
+    const handlePxlSelect = (key:Key) => {
+        const [row, column] = key.split(",");
+        const something:[number,number] = [parseInt(row,10),parseInt(column,10)]
+        setSelectedPixel(something)
+    }
+    const line = (row: string[], i: number) => {
+      return row.map((column, j) => {
+    	const bg_color: React.CSSProperties = {
+    	  backgroundColor: column,
+    	};
+    	const key:Key = `${i},${j}`;
+    	return (
+    	  <span
+    		key={key}
+    		onClick={() => handlePxlSelect(key)}
+    		style={bg_color}
+    		tabIndex={0}
+    		className="h-3 w-3 cursor-pointer hover:outline hover:outline-white hover:outline-1 focus:outline focus:outline-white focus:outline-1"
+    	  ></span>
+    	);
+      });
+    };
+	const Controls:React.FC = () => {
+	  const { zoomIn, zoomOut, resetTransform } = useControls();
+	  return (
+		<div className="">
+		  <button className='mx-1 my-1 backdrop-blur-sm bg-black text-white' onClick={() => zoomIn()}>Zoom in</button>
+		  <button className='mx-1 my-1 backdrop-blur-sm bg-black text-white' onClick={() => zoomOut()}>Zoom out</button>
+		  <button className='mx-1 my-1 backdrop-blur-sm bg-black text-white' onClick={() => resetTransform()}>Reset</button>
+		</div>
+	  );
+	};
+    const Pixels:React.FC = () => {
+      if (colors && colors.length > 0) {
+    	return colors.map((row, i) => (
+    	  <div key={i} className="flex">
+    		{line(row, i)}
+    	  </div>
+    	));
+      } else {
+    	console.log("colors does not exist");
+    	return <div>Seeems like canvas is unavailable at the moment</div>; 
+      }
+    };
+	return <div className='border-black border-2 '> 
+        <TransformWrapper
+            initialScale={1}
+            initialPositionX={0}
+            initialPositionY={0}
+            maxScale={2}
+            minScale={0.25}
+        >
+			<Controls/>
+            <div className='border-red-500 border-2 w-fit h-fit '>
+            <TransformComponent  >
+                <div className='border-black border-2 flex flex-col overflow-hide'>
+                <Pixels/>
+                </div>
+            </TransformComponent>
+            </div>
+        </TransformWrapper>
+    </div>
+    return <div className='flex flex-col'> 
+	<div className="w-[700px] h-[700px] relative overflow-auto"> 
+      <Rnd
+        className="w-fit h-fit absolute " 
+        default={{ x: 0, y: 0, width:'auto', height:'auto'}}
+        bounds="parent" 
+      >
+        <div><Pixels/></div>
+      </Rnd>
+    </div>
+        <div className='w-fit h-fit'> 
+            <HexColorPicker className='w-fit m-1 h-fit' color={color} onChange={setColor} />
         </div>
+    </div>
 }
 
 export default Canvas;

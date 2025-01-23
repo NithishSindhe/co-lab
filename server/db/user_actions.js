@@ -1,14 +1,6 @@
-import mysql from 'mysql2/promise'
 
-const pool = mysql.createPool({
-  host     : 'localhost',
-  user     : 'root',
-  password : '',
-  database : 'coLab'
-});
-console.log('created a connection pool for mysql')
-
-export async function createUser({userName=null, email=null, password=null, google_id=null, verified_email=null, salt=null, profile_pic=null}){
+export async function createUser({userName=null, email=null, password=null, google_id=null, verified_email=null, salt=null, profile_pic=null, connection_pool=null}){
+    const pool = connection_pool
     try{
         const [results] = await pool.execute(` INSERT INTO user_info (username, email, password, google_id, verified_email, salt, profile_pic) VALUES (?, ?, ?, ?, ?, ?, ?) `, [userName, email, password, google_id, verified_email, salt, profile_pic]);
         console.log('User created successfully. Inserted row ID:', results.insertId);
@@ -20,14 +12,14 @@ export async function createUser({userName=null, email=null, password=null, goog
     }
 }
 
-export async function updateGoogleUser({userName=null, email=null, password=null, google_id=null, verified_email=null, salt=null, profile_pic=null}){
+export async function updateGoogleUser({userName=null, email=null, password=null, google_id=null, verified_email=null, salt=null, profile_pic=null, connection_pool=null}){
+    const pool = connection_pool
     try{
         const [result] = await pool.execute(`
             UPDATE user_info
             SET username = ?, email = ?, password = ?, google_id = ?, verified_email = ?, salt = ?, profile_pic = ?
             WHERE google_id = ?
         `, [userName, email, password, google_id, verified_email, salt, profile_pic, google_id]);
-
         if (result.affectedRows === 0) {
             console.log(`No user found with id ${google_id} to update.`);
             return false; // Or throw an error if you prefer
@@ -40,7 +32,9 @@ export async function updateGoogleUser({userName=null, email=null, password=null
         throw error; // Re-throw the error to be handled by the caller
     }
 }
-export async function checkUserExists({google_id=null, id=null}) {
+
+export async function checkUserExists({google_id=null, id=null, connection_pool=null}) {
+    const pool = connection_pool
     try {
         if(google_id != null){
             const [rows] = await pool.execute('SELECT 1 FROM user_info WHERE google_id = ?', [google_id]);

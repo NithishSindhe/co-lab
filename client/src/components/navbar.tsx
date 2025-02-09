@@ -1,16 +1,15 @@
 import { useState } from 'react'
 import { googleLogout, useGoogleLogin } from '@react-oauth/google';
 import logo from '../assets/colab_logo.jpeg'
-import axios, {AxiosResponse} from 'axios';
+import axios from 'axios';
 import noprofile from '../assets/noProfile.png'
-import { setProfile, clearProfile } from '../../features/userLogin/userLoginSlice'
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom'
 import { FaChevronDown } from "react-icons/fa6"
 import { motion } from "framer-motion";
+import { setUserInfo, clearUserInfo, UserInfo } from '../../features/userLogin/userInfo'
 
 //interfaces 
-import { Profile } from '../../features/userLogin/userLoginSlice'
 import type { RootState, AppDispatch } from '../store';
 interface CredentialResponse {
   credential?: string; // The ID token (JWT)
@@ -21,19 +20,21 @@ interface CredentialResponse {
   expires_in?: number;
 }
 
-function Navbar() {
+
+const Navbar = () => {
+    const userInfo:UserInfo|null = useSelector((state:RootState) => state.userInfo);
     const navigate = useNavigate();
     const [expand, setExpand] = useState<boolean>(false)
-    const profile: Profile = useSelector((state: RootState) => state.profile);
-    const loginStatus: boolean = useSelector((state: RootState) => state.loginStatus);
+    //const userInfo: Profile = useSelector((state: RootState) => state.profile);
     const dispatch: AppDispatch = useDispatch();
     const [ProfileExpand, setProfileExpand] = useState<boolean>(false)
     const login = useGoogleLogin({
         onSuccess: (codeResponse:CredentialResponse) => {
-            console.log(codeResponse)
+            console.log(`access_token ${codeResponse.access_token}`)
             const options = {
-              url: 'http://localhost:3000/userlogin',
+              url: 'http://localhost:3000/login',
               method: 'POST',
+              withCredentials: true,
               headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json;charset=UTF-8'
@@ -44,15 +45,34 @@ function Navbar() {
             };
             axios(options)
               .then(response => {
-                dispatch(setProfile({name:response.data.name, picture: response.data.picture}));
-                dispatch(setLoginStatus())
+                console.log(response.data)
+                const data:UserInfo = {    
+                    accessToken: response.data?.access_token,
+                    userInfo: {email: response.data.email, profilPic: response.data?.picture, userName: response.data?.name}
+                }
+                dispatch(setUserInfo(data))
+                //dispatch(setProfile({name:response.data.name, picture: response.data.picture}));
               });
+
         },
         onError: (error) => console.log('Login Failed:', error)
     });
     const logOut = () => {
         googleLogout();
-        dispatch(clearProfile());
+        axios({
+            url: "http://localhost:3000/logout",
+            method: "POST",
+            withCredentials: true,
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json;charset=UTF-8"
+            }
+        }).then(response => {
+            console.log("successfull logged out user");
+            dispatch(clearUserInfo(response.data));
+        }).catch(err => {
+                console.error('failed to log out user: ', err)
+        })
     };
     const goToChat = () => {
         navigate('/chat'); 
@@ -64,6 +84,7 @@ function Navbar() {
         navigate('/kanban');
     }
     const li_link_syle = "w-full block py-2 px-3 hover:text-primary-light text-gray-900 rounded focus:bg-primary focus:hover:bg-primary focus:hover:text-white md:border-0 text-white md:hover:text-primary-light md:p-1" 
+
     return <nav className="bg-white border-gray-200 dark:bg-primary-dark">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <a href="/" className="flex items-center space-x-3">
@@ -75,7 +96,7 @@ function Navbar() {
           type="button"
           className="inline-flex items-center p-0 w-10 h-10 justify-center text-sm text-gray-500 rounded-full md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
         >
-            <img className="block md:hidden h-10 rounded-full text-white" src={profile.picture || noprofile} alt="Avatar" />
+            <img className="block md:hidden h-10 rounded-full text-white" src={(userInfo!==null)?userInfo['userInfo']['profile_pic']:noprofile} alt="Avatar" />
         </button>
         <div
           className={` transition-all ease-in-out duration-200 ${
@@ -110,14 +131,14 @@ function Navbar() {
                 onClick={() => setProfileExpand((prev) => !prev)}
                 className='hidden md:block flex items-center w-full py-0 px-0 text-gray-900 bg-transparent rounded border-0 bg-transparent text-white cursor-pointer'
               >
-                {profile?.name ? <span className='inline-block'>{profile.name}<FaChevronDown/></span>:<span 
+                {(userInfo!==null)? <span className='inline-block'>{userInfo['userInfo']['userName']}<FaChevronDown/></span>:<span 
                                 onClick={() => {login()}}
                                 className='w-full block py-2 px-3 text-gray-900 rounded bg-transparent md:border-0 text-white md:hover:border-0 md:hover:text-primary-light md:p-1'>Sign in</span>}
               </span>
              {/*logout drop down only for bigger screens */}
               <div
                 className={`absolute left-0 z-50 mt-2 w-44 rounded-lg shadow bg-white dark:bg-gray-700 transition-all ease-in-out duration-200 ${
-                  (ProfileExpand && profile?.name) ? 'block' : 'hidden' } `}>
+                  (ProfileExpand && userInfo) ? 'block' : 'hidden' } `}>
                 <span onClick={() => {logOut()}} className='block px-4 py-2 w-full bg-primary rounded-md hover:border-1 text-white cursor-pointer'>
                   Log out
                 </span>
@@ -125,12 +146,12 @@ function Navbar() {
             </li>
             <li>
                 <div className='hidden md:flex items-center h-8'> 
-                  <img className='hidden md:block h-8 rounded-full text-white' src={profile.picture || noprofile} alt='Avatar' />
+                  <img className='hidden md:block h-8 rounded-full text-white' src={(userInfo !== null)?userInfo['userInfo']['profilPic']:noprofile} alt='Avatar' />
                 </div>
             </li>
             {/* below element for small screens only */}
             <li>
-                { profile?.name ? <span onClick={() => {logOut()}}
+                { (userInfo !== null) ? <span onClick={() => {logOut()}}
                 className="block w-full md:hidden py-2 px-3 text-gray-900 bg-transparent focus:bg-primary rounded-lg  dark:text-white dark:hover:text-primary-light cursor-pointer " >
                     Log out
                 </span>:<span onClick={() => {login()}}

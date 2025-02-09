@@ -1,11 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
-import profileReducer from '../features/userLogin/userLoginSlice';
-import loginStatusReducer from '../features/userLogin/loginStatus';
+import userInfoReducer from '../features/userLogin/userInfo';
 
 const store = configureStore({
   reducer: {
-    profile: profileReducer,
-    loginStatus: loginStatusReducer,
+    userInfo: userInfoReducer,
     // Add other reducers here as needed
   },
 });

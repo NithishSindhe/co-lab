@@ -4,6 +4,10 @@ import bodyParser from 'body-parser'
 import {checkUserExists, createUser, updateGoogleUser} from './db/user_actions.js'
 import axios  from 'axios';
 import mysql from 'mysql2/promise'
+import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken'
+dotenv.config();
+import {sign_token, verify_token, refresh_token, verify_refresh_token, sign_refresh_token} from './auth/jwt.js'
 
 const pool = mysql.createPool({
   host     : 'localhost',
@@ -14,10 +18,23 @@ const pool = mysql.createPool({
 console.log('created a connection pool for mysql')
 
 import cors from 'cors';
+import cookieParser from 'cookie-parser'
 const port = 3000
 const app = express()
-app.use(cors())
+app.use(cookieParser());
+app.use(cors({
+    origin: "http://localhost:3000",
+    origin: "http://localhost:5173",
+    credentials: true 
+}));
 app.use(bodyParser.json());
+//app.use(function(req, res, next) {
+//  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); // Replace with your client's origin (e.g. http://localhost:3001 if your client runs on port 3001)
+//  res.setHeader('Access-Control-Allow-Credentials', 'true'); // Essential for credentials
+//  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE'); // Allow the necessary methods
+//  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allow necessary headers (e.g., if you're using Authorization headers)
+//  next();
+//});
 
 app.get('/bitArray', function (req, res) {
 	const getRandomColor = () => {
@@ -33,7 +50,6 @@ app.get('/bitArray', function (req, res) {
     .map(() => new Array(100).fill(null).map(getRandomColor));
     //twoD = new Array(10).fill('#000000').map(() => new Array(10).fill('#000000'))
     const response = {colors:twoD}
-    console.log('responsing to client request')
     res.send(response)
 })
 
@@ -58,48 +74,103 @@ app.post('/kanban_update', function (req,res) {
     
 })
 
-app.post('/userlogin', async function(req, res){
+app.post('/login', async function(req, res){
     try {
-        const accessToken = req.body?.access_token;
-        if (!accessToken) {
+        const googleAccessToken = req.body?.access_token;
+        if (!googleAccessToken) {
           return res.status(400).json({ error: 'Access token is required' }); 
         }
-        const response = await axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${accessToken}`,{
+        const response = await axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${googleAccessToken}`,{
             headers: {
-                Authorization: `Bearer ${accessToken}`,
+                Authorization: `Bearer ${googleAccessToken}`,
                 Accept: 'application/json'
             }
         })
+        console.log(`response: ${JSON.stringify(response[0])}`)
         const userExist = await checkUserExists({google_id: response.data.id, connection_pool:pool})
         if(!userExist){
             const userCreateResponse = await createUser({profile_pic:response.data.picture, google_id:response.data.id, userName:response.data.name, createAt:new Date().toLocaleString(), email:response.data.email, verified_email:response.data.verified_email, picture:response.data.picture, connection_pool:pool})
             console.log(`user creation response ${userCreateResponse}`)
-            res.status(200).json({ newUser:true , name: response.data.name, picture: response.data.picture});
-            return
         }else{
             await updateGoogleUser({profile_pic:response.data.picture, google_id:response.data.id, userName:response.data.name, createAt:new Date().toLocaleString(), email:response.data.email, verified_email:response.data.verified_email, picture:response.data.picture, connection_pool:pool})
         }
-        res.status(200).json({ newUser:false , name: response.data.name, picture: response.data.picture});
-        return
+        try{
+            const accessToken = await sign_token({data:{profile_pic:response.data.picture, email:response.data.email, user_name:response.data.name}, validity_duration:'15m'})
+            const refreshToken = await sign_refresh_token({data:{profile_pic:response.data.picture, email:response.data.email, user_name:response.data.name}, validity_duration:'7d'})
+			res.cookie('refreshToken', refreshToken, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV !== "development",
+				sameSite: "Strict",
+				maxAge: 7 * 24 * 60 * 60 * 1000,
+                domain: "localhost",
+                path: "/",
+			  });
+            return res.status(200).json({access_toke:accessToken, name: response.data.name, picture: response.data.picture});
+        }
+        catch(error){
+            console.error('Failed to sign access or refresh token: ', error) 
+            return res.status(500).json({error: 'unable to sign in user'})
+        }
     } catch (error) {
-        console.error("Error processing request:", error);
-        res.status(500).json({ error: 'Internal server error' }); // Send a 500 Internal Server Error
+        console.error("Error logging in user:", error);
+        return res.status(500).json({ error: 'Internal server error' }); 
     }
 })
 
-app.get('/chatconnection',(req,res)=>{
-/* http header for websocket
+app.post('/auth',(req,res) => {
+    const helper = async () => {
+        try{
+            const refresh_token = req.cookies?.refreshToken;
+            const response = await verify_refresh_token({token: refresh_token})
+            // if refresh token is valid then return a fresh valid auth token
+            const data = {...response}
+            delete data['iat']
+            delete data['exp']// if not deleted this will override validity specified at the function function
+            const newAuthToken = await sign_token({data:data, validity_duration:'15m'})
+            return res.status(200).json({access_token:newAuthToken, user_info:data})
+        }
+        catch(error){
+			if (error instanceof jwt.JsonWebTokenError) {
+			  console.error("/auth: JWT Error:", error.message); // Log JWT error
+			  return res.status(403).json({ message: "Please login again" });
+			}
+			console.error("Unexpected Error:", error);
+			return res.status(500).json({ message: "Internal Server Error" });
+        }
+    }
+    try{
+        helper()
+    }
+    catch(error){
+        console.error(`Unexpected error failed to authenticate user`)
+        return res.status(500).json({ error: 'Internal server error' }); 
+    }
+})
+
+app.post("/check-cookies", (req, res) => {
+    console.log("Parsed Cookies:", req.cookies);
+    res.json({ message: "Cookies checked", cookies: req.cookies });
+});
+
+app.post('/logout', (req, res) => {
+    console.log('logging out an user:',req.cookies?.refreshToken)
+    res.clearCookie('refreshToken');
+    res.sendStatus(200);
+})
+
+/*app.get('/chatconnection',(req,res)=>{
+ http header for websocket
 GET /chat HTTP/1.1
 Host: example.com:8000
 Upgrade: websocket
 Connection: Upgrade
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
 Sec-WebSocket-Version: 13
-*/
 })
 
 app.get('/canvasupdate',(req,res) => {
 })
+*/
 
 const uWSapp = uWS./*SSL*/App({}).ws('/*', {
   /* Options */

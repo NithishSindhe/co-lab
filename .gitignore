@@ -1,6 +1,11 @@
 # Node.js
 node_modules/
 
+#private and public keys
+private.key
+public.key
+keys/
+
 # Build files
 build/
 dist/

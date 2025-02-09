@@ -5,7 +5,7 @@ import axios from 'axios';
 import noprofile from '../assets/noProfile.png'
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom'
-import { FaChevronDown } from "react-icons/fa6"
+import { FaChevronDown,FaChevronUp } from "react-icons/fa6"
 import { motion } from "framer-motion";
 import { setUserInfo, clearUserInfo, UserInfo } from '../../features/userLogin/userInfo'
 
@@ -20,14 +20,12 @@ interface CredentialResponse {
   expires_in?: number;
 }
 
-
 const Navbar = () => {
     const userInfo:UserInfo|null = useSelector((state:RootState) => state.userInfo);
     const navigate = useNavigate();
     const [expand, setExpand] = useState<boolean>(false)
-    //const userInfo: Profile = useSelector((state: RootState) => state.profile);
     const dispatch: AppDispatch = useDispatch();
-    const [ProfileExpand, setProfileExpand] = useState<boolean>(false)
+    const [profileExpand, setProfileExpand] = useState<boolean>(false)
     const login = useGoogleLogin({
         onSuccess: (codeResponse:CredentialResponse) => {
             console.log(`access_token ${codeResponse.access_token}`)
@@ -131,14 +129,14 @@ const Navbar = () => {
                 onClick={() => setProfileExpand((prev) => !prev)}
                 className='hidden md:block flex items-center w-full py-0 px-0 text-gray-900 bg-transparent rounded border-0 bg-transparent text-white cursor-pointer'
               >
-                {(userInfo!==null)? <span className='inline-block'>{userInfo['userInfo']['userName']}<FaChevronDown/></span>:<span 
+                {(userInfo!==null)? <span className='inline-flex items-center'>{userInfo['userInfo']['userName']}{profileExpand?<FaChevronUp/>:<FaChevronDown/>}</span>:<span 
                                 onClick={() => {login()}}
                                 className='w-full block py-2 px-3 text-gray-900 rounded bg-transparent md:border-0 text-white md:hover:border-0 md:hover:text-primary-light md:p-1'>Sign in</span>}
               </span>
              {/*logout drop down only for bigger screens */}
               <div
                 className={`absolute left-0 z-50 mt-2 w-44 rounded-lg shadow bg-white dark:bg-gray-700 transition-all ease-in-out duration-200 ${
-                  (ProfileExpand && userInfo) ? 'block' : 'hidden' } `}>
+                  (profileExpand && userInfo) ? 'block' : 'hidden' } `}>
                 <span onClick={() => {logOut()}} className='block px-4 py-2 w-full bg-primary rounded-md hover:border-1 text-white cursor-pointer'>
                   Log out
                 </span>
